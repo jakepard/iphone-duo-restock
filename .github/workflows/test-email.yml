@@ -1,0 +1,21 @@
+name: Send Gmail test (manual only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Send a single test email
+        env:
+          VERCEL_URL: ${{ secrets.VERCEL_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          [ -n "${VERCEL_URL:-}" ] && [ -n "${CRON_SECRET:-}" ] || { echo 'Missing Actions secrets'; exit 1; }
+          curl --silent --show-error --fail-with-body --max-time 75 \
+            --request POST "${VERCEL_URL%/}/api/check?test=email" \
+            --header "Authorization: Bearer ${CRON_SECRET}" \
+            --header 'Content-Type: application/json'
