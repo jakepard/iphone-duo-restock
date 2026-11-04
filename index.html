@@ -100,25 +100,54 @@ if(!filtered.length){const empty=node('div','empty');empty.append(node('strong',
 const frag=document.createDocumentFragment();filtered.slice(0,250).forEach(s=>frag.append(renderStore(s)));list.append(frag);
 if(filtered.length>250)list.append(node('div','summary','Showing the first 250 matches. Narrow your search to find a specific store.'));
 }
+function fetchStockXHR(){
+ return new Promise((resolve,reject)=>{
+  const xhr=new XMLHttpRequest();
+  xhr.open('GET','/api/stock?refresh='+Date.now(),true);
+  xhr.timeout=20000;
+  xhr.onreadystatechange=()=>{
+   if(xhr.readyState!==4)return;
+   if(xhr.status<200||xhr.status>=300)return reject(Error('Stock feed HTTP '+xhr.status));
+   try{resolve(JSON.parse(xhr.responseText));}catch(err){reject(Error('Could not parse stock feed response'));}
+  };
+  xhr.onerror=()=>reject(Error('Network error loading stock data'));
+  xhr.ontimeout=()=>reject(Error('Stock feed request timed out'));
+  xhr.send();
+ });
+}
+async function fetchStock(){
+ try{
+  const r=await fetch('/api/stock',{cache:'no-store'});
+  if(!r.ok)throw Error('Stock feed HTTP '+r.status);
+  return await r.json();
+ }catch(err){
+  // Safari sometimes rejects fetch with a generic URL-pattern error. Try same-origin XHR.
+  if(err?.name==='SyntaxError'||/string did not match|network|fetch/i.test(String(err?.message||'')))return await fetchStockXHR();
+  throw err;
+ }
+}
 async function load(){
 $('refresh').disabled=true;$('refresh').textContent='Refreshing…';
-try{const r=await fetch('/api/stock',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);
-const d=await r.json();if(!Array.isArray(d.stores))throw Error('Invalid inventory feed');
-feed=d;lastFetched=Date.now();
+let stage='requesting inventory data';
+try{const d=await fetchStock();stage='validating inventory data';
+if(!Array.isArray(d.stores))throw Error('Invalid inventory feed');
+stage='updating dashboard';feed=d;lastFetched=Date.now();
 $('allStores').textContent=d.summary?.observedStores??'0';
 $('freshStores').textContent=d.summary?.freshStores??'0';
 $('availableStores').textContent=d.summary?.availableStores??'0';
 $('priorityStores').textContent=d.summary?.priorityStores??'0';
 $('lastChecked').textContent=d.monitorPaused?'MONITORING PAUSED — no new checks or alerts':d.lastRun?'Most recent scanner run '+dt(d.lastRun):'No scanner run recorded';
 $('nextUpdate').textContent='Page refreshed '+dt(lastFetched);
-$('warnings').textContent=d.lastBatch?.errors?'• '+d.lastBatch.errors+' scan errors in latest batch':'';
+const lastRunMs=d.lastRun?Date.parse(d.lastRun):NaN;
+const isOld=Number.isFinite(lastRunMs)&&Date.now()-lastRunMs>15*60000;
+$('warnings').textContent=(d.monitorPaused?'• Monitoring paused ':isOld?'• Last scan older than 15 minutes; scheduled checks need attention ':'')+(d.lastBatch?.errors?'• '+d.lastBatch.errors+' errors in latest batch':'');
 const states=[...new Set(d.stores.map(s=>s.state).filter(Boolean))].filter(v=>!['NY','NJ'].includes(v)).sort();
 const current=$('region').value;
 $('region').replaceChildren();
 for(const [value,label] of [['ALL','All nearby areas'],['PRIORITY','NY + NJ'],['NY','New York only'],['NJ','New Jersey only'],...states.map(s=>[s,s])]){const opt=node('option','',label);opt.value=value;$('region').append(opt);}
 $('region').value=current||'ALL';
-render();
-}catch(e){$('lastChecked').textContent='Could not refresh inventory: '+e.message;if(!feed){$('results').replaceChildren(node('div','empty','The inventory feed is temporarily unavailable.'));}}
+stage='rendering store results';render();
+}catch(e){$('lastChecked').textContent='Inventory error ('+stage+'): '+String(e?.message||e);if(!feed){$('results').replaceChildren(node('div','empty','The inventory feed is temporarily unavailable.'));}}
 finally{$('refresh').disabled=false;$('refresh').textContent='↻ Refresh data';}
 }
 for(const id of ['search','region','storage','availability'])$(id).addEventListener(id==='search'?'input':'change',render);
