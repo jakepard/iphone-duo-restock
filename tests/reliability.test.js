@@ -1,6 +1,6 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict');
-const {storesOf,API_URL,LEGACY_API_URL,isAvailable}=require('../lib/logic');
+const {storesOf,API_URL,FALLBACK_API_URL,isAvailable}=require('../lib/logic');
 const {normalizeLocalStore,makeLocalEmail}=require('../lib/local');
 const {runMonitor,fetchApple,ProviderBlocked}=require('../lib/runner');
 const {withPush}=require('../lib/push');
@@ -28,11 +28,11 @@ test('distance uses Apple store coordinates when provided',()=>{
  assert.notEqual(exact.distanceMiles,zipOnly.distanceMiles);
  assert.equal(exact.address.city,'Brooklyn');
 });
-test('unexpected response falls back to legacy endpoint; 541 never retried',async()=>{
+test('unexpected response falls back to the other endpoint; 541 never retried',async()=>{
  const seen=[];
  const shapeFail=async(base)=>{seen.push(base);if(base===API_URL)throw Error('Unexpected Apple pickup response');return ['ok'];};
  assert.deepEqual(await fetchApple('11230',shapeFail),['ok']);
- assert.deepEqual(seen,[API_URL,LEGACY_API_URL]);
+ assert.deepEqual(seen,[API_URL,FALLBACK_API_URL]);
  seen.length=0;
  await assert.rejects(fetchApple('11230',async b=>{seen.push(b);throw new ProviderBlocked('Apple pickup HTTP 541');}),ProviderBlocked);
  assert.deepEqual(seen,[API_URL]);
