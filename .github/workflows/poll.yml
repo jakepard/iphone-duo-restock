@@ -1,7 +1,7 @@
 name: Check iPhone Duo stock near 11230
 on:
   schedule:
-    # Requested five-minute cadence. GitHub may delay or skip scheduled runs.
+    # GitHub Actions: shortest supported interval is 5 minutes, and runs may be delayed.
     - cron: '3/5 * * * *'
   workflow_dispatch:
 permissions:
@@ -14,14 +14,44 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Check Apple pickup inventory within 50 miles of 11230
+      - name: Scan whole radius, then check Brooklyn hotspot between scheduled runs
         env:
           VERCEL_URL: ${{ secrets.VERCEL_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
           [ -n "${VERCEL_URL:-}" ] && [ -n "${CRON_SECRET:-}" ] || { echo 'Missing Actions secrets'; exit 1; }
-          curl --silent --show-error --fail-with-body --max-time 225 \
-            --request POST "${VERCEL_URL%/}/api/check" \
-            --header "Authorization: Bearer ${CRON_SECRET}" \
-            --header 'Content-Type: application/json'
+
+          stop=0
+          check() {
+            local mode="$1" url="${VERCEL_URL%/}/api/check" output state
+            if [ "$mode" = hotspot ]; then url="${url}?mode=hotspot"; fi
+            output="$(curl --silent --show-error --fail-with-body --max-time 50 \
+              --request POST "$url" \
+              --header "Authorization: Bearer ${CRON_SECRET}" \
+              --header 'Content-Type: application/json')"
+            printf '%s\n' "$output"
+            state="$(printf '%s' "$output" | jq -er '.status')"
+            case "$state" in
+              paused|rate-limited|cooldown|busy)
+                echo "Monitor is $state; skipping follow-up checks."
+                stop=1
+                ;;
+              ok|partial) ;;
+              *)
+                echo "Unexpected scanner status: $state"
+                return 1
+                ;;
+            esac
+          }
+
+          # Full 50-mile coverage (5 core + 4 rotating perimeter locations).
+          check full
+
+          # Three additional local pickup checks; no loops below 55 seconds.
+          # Stops immediately if the service is paused or rate-limited.
+          for attempt in 1 2 3; do
+            if [ "$stop" = 1 ]; then break; fi
+            sleep 55
+            check hotspot
+          done

@@ -48,3 +48,16 @@ Go to [Pause or resume iPhone Duo alerts](https://github.com/jakepard/iphone-duo
 ## Faster purchasing (manual confirmation)
 
 Alert emails prioritize the official Apple purchase URL, the exact color/storage, store location, approximate distance, and a Google Maps location link. Save an Apple account, pickup details and payment method ahead of time; complete checkout personally. The link is a product page, not a guaranteed preloaded cart or store-specific reservation. Automatic purchasing and payment account access are not enabled.
+
+## Faster Brooklyn hotspot checks
+
+The default GitHub Actions workflow now makes **one complete 50-mile scan** per scheduled run, followed by up to **three extra checks of ZIP 11230** roughly 55 seconds apart during the same job. Existing alerts and deduplication use the same Upstash data. The full region is *not* checked every minute: only the Brooklyn hotspot gets these extra checks.
+
+GitHub still launches at a **five-minute minimum**; scheduled jobs can be delayed or omitted. This design runs for roughly three minutes then stops, and is not a continuous or guaranteed 5-second scanner. It uses a bounded number of requests and stops on pause, server cooldown, and Apple 403/429 responses. Never attempt to evade Apple's rate limits or access restrictions. Apple's site terms restrict automatic website monitoring; get an authorized inventory data feed before scaling up or selling the service.
+
+The GitHub workflow handles the following protected endpoints:
+- `POST /api/check` — full 50-mile scan.
+- `POST /api/check?mode=hotspot` — ZIP 11230 focused follow-up scan.
+- `POST /api/check?test=email` — test-email only.
+
+The workflow logs specify `scanMode` so you can distinguish a complete scan from a hotspot check. The URL is authorized with the same private `CRON_SECRET` already configured. Stop or resume using the separate GitHub Actions control workflow.
