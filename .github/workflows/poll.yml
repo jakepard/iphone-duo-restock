@@ -2,8 +2,12 @@ name: Check iPhone Duo stock near 11230
 on:
   schedule:
     # GitHub Actions: shortest supported interval is 5 minutes, and runs may be delayed.
-    - cron: '3/5 * * * *'
+    - cron: '2,7,12,17,22,27,32,37,42,47,52,57 * * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/poll.yml'
 permissions:
   contents: read
 concurrency:
