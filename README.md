@@ -61,3 +61,24 @@ The GitHub workflow handles the following protected endpoints:
 - `POST /api/check?test=email` — test-email only.
 
 The workflow logs specify `scanMode` so you can distinguish a complete scan from a hotspot check. The URL is authorized with the same private `CRON_SECRET` already configured. Stop or resume using the separate GitHub Actions control workflow.
+
+## Free external scheduling via cron-job.org
+
+GitHub Actions' cron has not fired automatically for this repository, so the app now supports **a restricted stock-check endpoint**. It uses `EXTERNAL_SCHEDULER_SECRET`, separate from `CRON_SECRET`. It can **only check inventory** — not send arbitrary emails, pause/resume, or access admin functions.
+
+Set up:
+1. Generate a fresh random secret on your own device: `openssl rand -hex 32`. Keep it private; do not paste it into chat, GitHub, or screenshots.
+2. In Vercel project Settings → Environment Variables add `EXTERNAL_SCHEDULER_SECRET` as **Secret** for **Production** with that exact value. Redeploy production after saving.
+3. In cron-job.org, create the **Brooklyn hotspot** job:
+   - URL: `https://iphone-duo-restock.vercel.app/api/schedule?mode=hotspot`
+   - Request method: **POST**
+   - Custom HTTP header: `Authorization` = `Bearer <YOUR-EXTERNAL_SCHEDULER_SECRET>` (replace bracketed text with the real secret)
+   - Schedule: **every minute**, all hours/days, job enabled.
+4. Create the **full local area** job:
+   - URL: `https://iphone-duo-restock.vercel.app/api/schedule?mode=full`
+   - Method: **POST**; same authorization header.
+   - Schedule: **every five minutes**, all hours/days, job enabled.
+5. Test the jobs using cron-job.org execution history: successful checks return HTTP 200 and JSON with `status: ok`, `scanMode`, and `checks`. If `paused` or `cooldown`, the scanner is intentionally not checking. If `busy`, a check is already running. Cron-job.org free jobs can time out at **30 seconds**; the full scan can occasionally take longer, so verify its history rather than trusting the schedule alone.
+6. **After both jobs are confirmed successful**, disable GitHub's separate `Check iPhone Duo stock near 11230` workflow (Actions → workflow → ⋯ → Disable workflow) to avoid duplicate requests. Leave the separate pause/resume and email-test workflows enabled. Enable cron-job.org failure notifications.
+
+Alert emails continue through the existing Gmail connection, only when a new restock is independently confirmed. Do not increase polling beyond what your inventory source permits.
