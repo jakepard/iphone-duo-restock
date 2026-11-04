@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict');
 const {normalizeLocalStore,makeLocalEmail,CORE_SEEDS,EDGE_SEEDS}=require('../lib/local');
-const {runMonitor}=require('../lib/runner');
+const {runMonitor,ProviderBlocked}=require('../lib/runner');
 const {toPublicFeed}=require('../lib/stock');
 const PART='MK1E4LL/A';
 const avail={pickupDisplay:'available',messageTypes:{regular:{storeSelectionEnabled:true}}};
@@ -52,4 +52,26 @@ test('failed provider queries are reported as failures, not as an OK scan',async
  assert.equal(outcome.errors,2);
  assert.equal(stored.lastSuccess,null);
  assert.match(outcome.lastError,/Apple pickup HTTP 500/);
+});
+
+test('HTTP 541 provider rejection stops batch and applies a 30-minute cooldown',async()=>{
+ let stored=null,lock=null,fetches=0;
+ const tick=Date.UTC(2026,10,4,17,0,0);
+ const redis={
+  async get(key){return key.includes(':lock:')?lock:key.includes(':paused:')?null:stored;},
+  async set(key,value,options){if(key.includes(':lock:')){if(lock&&options?.nx)return null;lock=value;return 'OK';}stored=value;return 'OK';},
+  async del(){lock=null;}
+ };
+ const options={redis,sendEmail:async()=>{throw Error('Do not send alerts on blocked provider')},fetchStores:async()=>{fetches++;throw new ProviderBlocked('Apple pickup HTTP 541')},coreSeeds:['11230','10001','10314'],edgeSeeds:[],pause:async()=>{},now:()=>tick};
+ const first=await runMonitor(options);
+ assert.equal(first.status,'provider-blocked');
+ assert.equal(first.checks,1);
+ assert.equal(first.successfulChecks,0);
+ assert.equal(first.errors,1);
+ assert.equal(fetches,1);
+ assert.equal(stored.blockedUntil,tick+30*60*1000);
+ const second=await runMonitor(options);
+ assert.equal(second.status,'cooldown');
+ assert.equal(fetches,1);
+ assert.match(first.lastError,/541/);
 });
