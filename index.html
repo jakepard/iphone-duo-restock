@@ -1,1 +1,126 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>iPhone Duo Restock Radar</title><style>body{font:16px -apple-system,BlinkMacSystemFont,sans-serif;background:#f6f7fb;color:#111827;margin:0;padding:28px 18px}.wrap{max-width:600px;margin:auto}h1{font-size:1.8rem;margin:0 0 8px}.sub{color:#525b6a}.card{background:white;padding:21px;border-radius:16px;box-shadow:0 1px 8px #0001;margin:18px 0}.small{font-size:14px;color:#525b6a}dt{color:#525b6a;margin-top:13px}dd{margin:3px 0 0;font-weight:600}a{color:#155eef}button{background:#141f32;color:white;border:0;border-radius:10px;padding:12px 15px;font-weight:600}</style></head><body><main class="wrap"><h1>📱 iPhone Duo Restock Radar</h1><p class="sub">US Apple Store pickup monitoring • NY/NJ prioritized • Gmail alerts</p><div class="card"><strong id="state">Loading scan status…</strong><dl><dt>Most recent check</dt><dd id="last">—</dd><dt>US stores observed</dt><dd id="stores">—</dd><dt>Last batch</dt><dd id="batch">—</dd></dl><p class="small">Coverage is discovered gradually; a store count is not proof that all US stores were checked recently. Availability changes quickly.</p><button onclick="update()">Refresh</button></div><p>Order at <a href="https://www.apple.com/shop/buy-iphone/iphone-duo">Apple’s iPhone Duo shop</a>.</p><p class="small">Independent hobby project. No checkout automation. This dashboard does not initiate stock checks; scheduled jobs do that.</p></main><script>async function update(){try{const r=await fetch('/api/status',{cache:'no-store'}),d=await r.json();document.getElementById('state').textContent=d.status||'Unavailable';document.getElementById('last').textContent=d.lastRun?new Date(d.lastRun).toLocaleString():'Not yet';document.getElementById('stores').textContent=d.discoveredUSStores??'—';document.getElementById('batch').textContent=d.lastBatch?`${d.lastBatch.checks} seed checks, ${d.lastBatch.errors} errors, ${d.lastBatch.confirmed} confirmed combinations`:'No scan yet';}catch(e){document.getElementById('state').textContent='Status unavailable';}}update();</script></body></html>
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1222"><title>iPhone Duo | Stock Radar</title>
+<style>
+:root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#f6f8fc;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0}button,select,input{font:inherit}
+header{background:#0b1222;color:white}.top{max-width:1180px;margin:auto;padding:23px 22px 28px}
+.logo{display:flex;align-items:center;gap:11px;font-size:21px;font-weight:800;letter-spacing:-.6px}.mark{display:grid;place-items:center;background:#2948e8;color:#fff;width:38px;height:38px;border-radius:11px;font-size:22px}
+.badge{display:inline-flex;align-items:center;border-radius:30px;background:#1f314e;color:#a4d6ff;font-weight:650;font-size:11px;letter-spacing:.2px;padding:6px 11px;margin-left:auto}
+.hero{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-top:26px}.hero h1{font-size:clamp(27px,4vw,40px);letter-spacing:-1.5px;margin:0 0 7px}.hero p{color:#a8b7d0;margin:0;font-size:14px;line-height:1.6}.hero a{background:#fff;color:#14233c;text-decoration:none;padding:12px 17px;border-radius:10px;font-size:14px;font-weight:750;white-space:nowrap}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 22px 60px}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}.stat{background:white;border:1px solid #e5eaf3;border-radius:15px;padding:19px;box-shadow:0 3px 14px #142a4a08}.stat small{display:block;font-size:12px;font-weight:650;color:#62738d}.stat strong{display:block;font-size:28px;letter-spacing:-1px;margin-top:6px}.stat span{font-size:11px;color:#8290a3}
+.panel{background:white;border:1px solid #e5eaf3;border-radius:16px;box-shadow:0 3px 14px #142a4a08;margin-top:18px}.panelhead{padding:18px 19px;border-bottom:1px solid #e9edf3;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.panelhead h2{margin:0;font-size:17px;letter-spacing:-.4px}.panelhead p{font-size:12px;color:#62738d;margin:5px 0 0}.hint{font-size:11px;color:#62738d}
+.filters{display:grid;grid-template-columns:minmax(170px,2fr) repeat(3,minmax(120px,1fr));gap:10px;padding:15px 19px;background:#fbfcff;border-bottom:1px solid #e9edf3}
+input,select{width:100%;min-height:40px;background:#fff;border:1px solid #dce3ef;color:#26344d;border-radius:9px;padding:9px 11px;font-size:13px;outline-offset:2px}
+button{cursor:pointer}.tool{border:1px solid #dce3ef;background:white;border-radius:9px;padding:9px 13px;font-size:12px;font-weight:700;color:#1c3154}.tool:hover{background:#f5f8ff}
+.summary{padding:11px 19px;font-size:12px;color:#62738d;border-bottom:1px solid #e9edf3;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;background:#15a371;margin-right:5px}
+.store{border-bottom:1px solid #edf0f5}.store:last-child{border-bottom:none}.storehead{display:grid;grid-template-columns:1fr auto auto;gap:16px;align-items:center;padding:16px 19px}
+.storename{font-weight:750;color:#16243e;font-size:14px}.storeloc{color:#667893;font-size:12px;margin-top:5px}.chip{display:inline-flex;align-items:center;background:#edf2ff;border-radius:20px;padding:5px 8px;font-weight:700;color:#3154b2;font-size:10px;margin-left:6px}
+.pill{display:inline-block;border-radius:20px;padding:5px 10px;font-size:11px;font-weight:700;white-space:nowrap}.pill.available{color:#05714d;background:#daf9ea}.pill.unavailable{color:#a34545;background:#ffeded}.pill.unknown{color:#65748c;background:#eff2f6}.pill.stale{color:#966a16;background:#fff3d9}
+.storetime{font-size:11px;color:#8190a2;margin-top:7px;text-align:right}.variants{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;padding:0 19px 18px}.variant{border:1px solid #e7eaf1;border-radius:10px;padding:12px;background:#fff}.variant .spec{font-size:12px;font-weight:750;margin-bottom:9px}.variant .meta{font-size:10px;color:#718096;margin-top:8px}
+.actions{display:flex;gap:8px;align-items:center}.link{display:inline-block;text-decoration:none;color:#fff;background:#2049dc;font-size:11px;font-weight:750;border-radius:8px;padding:9px 12px;white-space:nowrap}.expand{background:#f5f7fb;border:1px solid #e6eaf1;color:#3f526c;border-radius:8px;padding:9px 11px;font-size:11px;font-weight:700}
+.details{display:none}.store.open .details{display:block}.empty{text-align:center;padding:48px 18px;color:#64748b}.empty strong{color:#24344e;display:block;margin-bottom:6px}
+footer{color:#64748b;font-size:12px;line-height:1.7;margin:25px 2px}a{color:#2255e0}footer a{color:#2255e0}.disclaimer{margin-top:14px;font-size:12px;color:#58677e;background:#fff7e7;padding:12px 15px;border:1px solid #f6e8c8;border-radius:10px;line-height:1.6}
+@media(max-width:900px){.filters{grid-template-columns:repeat(2,1fr)}.variants{grid-template-columns:repeat(2,minmax(0,1fr))}.stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:580px){.top{padding:17px 15px 24px}.wrap{padding:15px 12px}.hero{display:block}.hero a{display:inline-block;margin-top:17px}.stats{gap:9px}.stat{padding:14px}.stat strong{font-size:24px}.filters{grid-template-columns:1fr}.storehead{grid-template-columns:1fr auto;gap:8px}.storehead .actions{grid-column:1 / -1}.variants{grid-template-columns:1fr 1fr;padding:0 12px 15px}.panelhead,.storehead,.summary{padding-left:13px;padding-right:13px}.storetime{text-align:left}.chip{margin-left:0;margin-top:4px}.badge{display:none}}
+</style></head><body>
+<header><div class="top"><div class="logo"><div class="mark">◉</div> iPhone Duo <span style="font-size:14px;font-weight:450;color:#89a1c4">/ Stock Radar</span><span class="badge">US APPLE STORE PICKUP</span></div>
+<div class="hero"><div><h1>Find your next iPhone.</h1><p>US inventory observations · New York &amp; New Jersey prioritized · All 8 configurations</p></div><a href="https://www.apple.com/shop/buy-iphone/iphone-duo" target="_blank" rel="noopener noreferrer">Shop at Apple ↗</a></div></div></header>
+<main class="wrap"><section class="stats">
+<div class="stat"><small>Stores discovered</small><strong id="allStores">—</strong><span>Across the US</span></div>
+<div class="stat"><small>Recently checked stores</small><strong id="freshStores">—</strong><span>Within 30 minutes</span></div>
+<div class="stat"><small>Reported available</small><strong id="availableStores">—</strong><span>Stores with recent available signals</span></div>
+<div class="stat"><small>NY / NJ stores observed</small><strong id="priorityStores">—</strong><span>Priority regions</span></div>
+</section>
+<div class="disclaimer"><strong>Availability is informational, not guaranteed.</strong> Store results come from periodic pickup checks, not direct stock reservations. “Reported available” is a recent observation, not a promise of inventory. Verify with Apple before traveling or purchasing.</div>
+<section class="panel"><div class="panelhead"><div><h2>Store inventory</h2><p id="lastChecked">Loading latest inventory observations…</p></div><button class="tool" type="button" id="refresh">↻ Refresh data</button></div>
+<div class="filters"><input id="search" type="search" placeholder="Search store, city, state, ZIP…" aria-label="Search stores">
+<select id="region" aria-label="Filter region"><option value="ALL">All US regions</option><option value="PRIORITY">NY + NJ priority</option><option value="NY">New York only</option><option value="NJ">New Jersey only</option></select>
+<select id="storage" aria-label="Filter storage"><option value="ALL">All storage sizes</option><option value="256GB">256GB</option><option value="512GB">512GB</option><option value="1TB">1TB</option><option value="2TB">2TB</option></select>
+<select id="availability" aria-label="Filter availability"><option value="ALL">All availability</option><option value="available">Reported available</option><option value="unavailable">Reported unavailable</option><option value="stale">Stale observations</option><option value="not-checked">Not yet checked</option></select></div>
+<div class="summary"><span id="shown">Loading…</span><span id="nextUpdate"></span><span id="warnings"></span></div><div id="results" aria-live="polite"><div class="empty">Fetching observed inventory…</div></div></section>
+<footer><strong>About the data.</strong> Results refresh every 60 seconds in this browser. A 30-minute freshness window is applied; older results display as stale rather than “in stock.” Search batches rotate across US locations; stores not checked recently will remain marked stale. <a href="https://github.com/jakepard/iphone-duo-restock" target="_blank" rel="noopener noreferrer">View source and monitoring</a>.<p>Independent project. Not affiliated with Apple. No inventory is reserved or purchased through this site.</p></footer></main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+let feed=null;
+let lastFetched=0;
+const dt=ms=>ms?new Date(ms).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'Never';
+const age=ms=>!ms?'Never checked':(Date.now()-ms<60000?'Just now':Math.round((Date.now()-ms)/60000)+'m ago');
+const node=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el};
+const priority=s=>s.state==='NY'||s.state==='NJ';
+function variantMatch(v){return $('storage').value==='ALL'||v.storage===$('storage').value;}
+function selectedVariants(store){return(store.variants||[]).filter(variantMatch)}
+function availabilityMatches(store){
+const value=$('availability').value,variants=selectedVariants(store);
+return value==='ALL'||variants.some(v=>v.status===value);
+}
+function storeMatches(s){
+const region=$('region').value;
+if(region==='PRIORITY'&&!priority(s))return false;
+if(region!=='ALL'&&region!=='PRIORITY'&&region!==s.state)return false;
+const text=[s.name,s.city,s.state,s.postalCode,s.id].join(' ').toLowerCase();
+return text.includes($('search').value.trim().toLowerCase())&&availabilityMatches(s);
+}
+function statusLabel(status,variant){
+if(status==='available')return variant?.confirmedAt?'Confirmed available':'Reported available';
+if(status==='unavailable')return 'Reported unavailable';
+if(status==='stale')return 'Stale observation';
+if(status==='not-checked')return 'Not checked';
+return 'Unknown';
+}
+function statusClass(status){return ['available','unavailable','stale'].includes(status)?status:'unknown';}
+function createVariant(v){
+const el=node('div','variant');
+el.append(node('div','spec',v.label));
+el.append(node('span','pill '+statusClass(v.status),statusLabel(v.status,v)));
+el.append(node('div','meta',v.observedAt?'Observed '+age(v.observedAt):'No availability observation'));
+return el;
+}
+function renderStore(s){
+const el=node('article','store');const head=node('div','storehead');const primary=node('div');
+const nm=node('div','storename',s.name||s.id);if(priority(s))nm.append(node('span','chip','NY/NJ PRIORITY'));
+primary.append(nm,node('div','storeloc',[s.city,s.state,s.postalCode].filter(Boolean).join(', ')||s.id));
+const match=selectedVariants(s);
+const count=match.filter(v=>v.status==='available').length,checked=match.filter(v=>v.status==='available'||v.status==='unavailable').length;
+const right=node('div');right.append(node('div','pill '+(count?'available':checked?'unavailable':'stale'),count?count+' reported available':checked?checked+' recently checked':'No fresh inventory'),node('div','storetime',s.lastChecked?'Last observed '+age(s.lastChecked):'Not checked'));
+const acts=node('div','actions');const btn=node('button','expand','Show variants');btn.type='button';btn.setAttribute('aria-expanded','false');
+btn.addEventListener('click',()=>{const open=el.classList.toggle('open');btn.textContent=open?'Hide variants':'Show variants';btn.setAttribute('aria-expanded',String(open));});
+const link=node('a','link','Buy at Apple ↗');link.href=feed.buyUrl||'https://www.apple.com/shop/buy-iphone/iphone-duo';link.target='_blank';link.rel='noopener noreferrer';
+acts.append(btn,link);head.append(primary,right,acts);el.append(head);
+const details=node('div','details');const grid=node('div','variants');match.forEach(v=>grid.append(createVariant(v)));details.append(grid);el.append(details);return el;
+}
+function render(){
+if(!feed)return;
+const filtered=(feed.stores||[]).filter(storeMatches).sort((a,b)=>b.available-a.available||Number(priority(b))-Number(priority(a))||a.name.localeCompare(b.name));
+$('shown').textContent=filtered.length+' of '+(feed.stores||[]).length+' stores shown';
+const list=$('results');list.replaceChildren();
+if(!filtered.length){const empty=node('div','empty');empty.append(node('strong','','No matching store observations'),node('div','','Try clearing filters, or check again after additional scan cycles.'));list.append(empty);return;}
+const frag=document.createDocumentFragment();filtered.slice(0,250).forEach(s=>frag.append(renderStore(s)));list.append(frag);
+if(filtered.length>250)list.append(node('div','summary','Showing the first 250 matches. Narrow your search to find a specific store.'));
+}
+async function load(){
+$('refresh').disabled=true;$('refresh').textContent='Refreshing…';
+try{const r=await fetch('/api/stock',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);
+const d=await r.json();if(!Array.isArray(d.stores))throw Error('Invalid inventory feed');
+feed=d;lastFetched=Date.now();
+$('allStores').textContent=d.summary?.observedStores??'0';
+$('freshStores').textContent=d.summary?.freshStores??'0';
+$('availableStores').textContent=d.summary?.availableStores??'0';
+$('priorityStores').textContent=d.summary?.priorityStores??'0';
+$('lastChecked').textContent=d.lastRun?'Most recent scanner run '+dt(d.lastRun):'No scanner run recorded';
+$('nextUpdate').textContent='Page refreshed '+dt(lastFetched);
+$('warnings').textContent=d.lastBatch?.errors?'• '+d.lastBatch.errors+' scan errors in latest batch':'';
+const states=[...new Set(d.stores.map(s=>s.state).filter(Boolean))].filter(v=>!['NY','NJ'].includes(v)).sort();
+const current=$('region').value;
+$('region').replaceChildren();
+for(const [value,label] of [['ALL','All US regions'],['PRIORITY','NY + NJ priority'],['NY','New York only'],['NJ','New Jersey only'],...states.map(s=>[s,s])]){const opt=node('option','',label);opt.value=value;$('region').append(opt);}
+$('region').value=current||'ALL';
+render();
+}catch(e){$('lastChecked').textContent='Could not refresh inventory: '+e.message;if(!feed){$('results').replaceChildren(node('div','empty','The inventory feed is temporarily unavailable.'));}}
+finally{$('refresh').disabled=false;$('refresh').textContent='↻ Refresh data';}
+}
+for(const id of ['search','region','storage','availability'])$(id).addEventListener(id==='search'?'input':'change',render);
+$('refresh').addEventListener('click',load);load();setInterval(load,60000);
+</script></body></html>

@@ -1,48 +1,23 @@
 # iPhone Duo Restock Radar
 
-Personal, free-tier Apple pickup availability tracker with **NY/NJ priority**, nationwide US checks, **every color / storage variant**, grouped Gmail email alerts, and a public read-only status dashboard. No purchasing or checkout automation.
+Personal US Apple Store pickup-monitoring bot with NY/NJ priority, Gmail alerts, and a live dashboard.
 
-**Status:** This repository contains the app code. It will not send alerts until Vercel, Upstash, Gmail and GitHub Actions have been configured and a test check succeeds.
+[Dashboard](https://iphone-duo-restock.vercel.app) · [GitHub Actions](https://github.com/jakepard/iphone-duo-restock/actions/workflows/poll.yml)
 
-## Setup on your iPhone
+## Deployment and credentials
 
-1. Import this GitHub repository to **Vercel Hobby** at https://vercel.com/new. Use the repository root, preset **Other** / no framework. The production URL is shown after deploying.
-2. Create a free Redis database at https://console.upstash.com/redis. Copy the **REST URL** and **REST token** to a private place. Never put credentials in public GitHub files.
-3. For Gmail, enable two-step verification and generate a **Google App Password** at https://myaccount.google.com/apppasswords. This is separate from your normal Google password.
-4. In **Vercel → Project → Settings → Environment Variables**, configure the following for **Production** and redeploy:
-   - `CRON_SECRET`: a random secret of at least 24 characters, generated with your password manager
-   - `UPSTASH_REDIS_REST_URL`: the Redis REST URL
-   - `UPSTASH_REDIS_REST_TOKEN`: the Redis REST token
-   - `GMAIL_ADDRESS`: the Gmail address sending alerts
-   - `GMAIL_APP_PASSWORD`: Gmail App Password
-   - `EMAIL_TO` (optional): recipient; defaults to the Gmail sender
-5. In **GitHub → Repository → Settings → Secrets and variables → Actions**, create two repository secrets:
-   - `VERCEL_URL`: your production deployment URL (for example, `https://iphone-duo-restock.vercel.app`; do not add a path)
-   - `CRON_SECRET`: **exactly the same secret** as in Vercel
-6. Go to **GitHub → Actions → iPhone Duo inventory checks**, enable if asked, then choose **Run workflow**. First run with `test_email` enabled to verify delivery. Run again with it disabled to test an actual inventory scan.
-7. Visit the production dashboard to check last scan, errors, and discovered stores. Configure email notifications on your iPhone if desired.
+This repository is linked to a Vercel project. Set the following environment variables on Vercel, production scope: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD`, `CRON_SECRET`. In GitHub Actions repository secrets, set `VERCEL_URL` to your production domain and `CRON_SECRET` to the same value used in Vercel. Never commit credentials.
 
-## Scheduling and limits
-
-Vercel Hobby cron does not provide five-minute scans, so GitHub Actions invokes the secured Vercel endpoint on a five-minute schedule. GitHub may delay or skip jobs. Each job checks ten priority NY/NJ seeds and twelve nationwide seeds; those seeds cycle, so **an individual location will generally be checked much less often than every five minutes**. Overlapping regional inventory responses may cover extra stores. It does not guarantee every store is checked or that every restock is captured.
-
-Inventory is rechecked before sending email. Repeated alerts remain suppressed until a store/SKU has been observed explicitly unavailable twice. Errors and unknown statuses are not treated as sold out. A daily email cap (default 20) limits spam. API providers may reject automated requests. This depends on an undocumented Apple endpoint and can stop working if Apple's service changes.
-
-## API
-
-- `/`: public read-only status UI
-- `GET /api/status`: public scan statistics (no secrets)
-- `POST /api/check`: requires `Authorization: Bearer <CRON_SECRET>`
-- `POST /api/check?test=email`: sends one test message (also authenticated)
-
-**Security:** Never commit a `.env` file, App Password, Redis token, or the cron secret. Configure them only in private environment or repository-secret settings.
+The GitHub Actions workflow calls the protected inventory API on a 5-minute schedule (execution may be delayed). Each scanner batch rotates through US search seeds, with priority given to NY and NJ. The endpoint uses `Authorization: Bearer <CRON_SECRET>`. Test email dispatch using the GitHub Actions workflow with `test_email` enabled, or run an inventory scan without it. The inventory feed is read-only.
 
 ## Tests
 
-Run `npm install && npm test`. Tests use mocked Apple responses. Passing tests does not prove Apple stock checks or Gmail delivery are working on the deployed site.
+Run `npm install && npm test` locally. Tests do not guarantee Apple availability access or real-time checkout availability.
 
-## Notes
+## Live inventory dashboard
 
-Vercel Hobby usage is for eligible personal/noncommercial projects. GitHub scheduled jobs on public repos may be disabled after a prolonged period of inactivity. Free Upstash and Gmail limits also apply.
+The public dashboard at the production domain now shows observed US stores, individual model/color/storage combinations, last-check timestamps, regional filters, and links to Apple's shop. `GET /api/stock` returns the same sanitized public data; no credentials or subscriber addresses are included.
 
-Links: [Vercel](https://vercel.com), [Upstash](https://upstash.com), [Google App Passwords](https://support.google.com/accounts/answer/185833), [GitHub scheduling](https://docs.github.com/actions/using-workflows/events-that-trigger-workflows#schedule).
+**Freshness:** Availability information older than 30 minutes is always marked stale. Existing observations from older bot versions have no SKU observation timestamps, so they initially show as `Not checked` until the new scanner runs. A newer unavailable observation never becomes “available.” Apple pickup values are only observed signals: they do not promise that a product can still be ordered when a customer clicks.
+
+**Potential commercial service:** Vercel Hobby is not for commercial operation, and independently gathering or reselling Apple's website inventory may require permission or a licensed stock-data feed. Verify authorized use and choose paid commercial-capable infrastructure before selling subscriptions. This project does not include customer accounts, billing, or production subscription security.
