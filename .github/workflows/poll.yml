@@ -1,0 +1,32 @@
+name: iPhone Duo inventory checks
+on:
+  schedule:
+    - cron: '3/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      test_email:
+        description: Send one test email instead of a stock check
+        required: false
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: iphone-duo-poll
+  cancel-in-progress: false
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call protected Vercel scanner
+        env:
+          VERCEL_URL: ${{ secrets.VERCEL_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          TEST_EMAIL: ${{ inputs.test_email }}
+        run: |
+          set -euo pipefail
+          [ -n "${VERCEL_URL:-}" ] && [ -n "${CRON_SECRET:-}" ] || { echo 'Missing Actions secrets'; exit 1; }
+          url="${VERCEL_URL%/}/api/check"
+          if [ "${TEST_EMAIL:-false}" = "true" ]; then url="${url}?test=email"; fi
+          curl --silent --show-error --fail-with-body --max-time 225 -X POST "${url}" -H "Authorization: Bearer ${CRON_SECRET}" -H 'Content-Type: application/json'

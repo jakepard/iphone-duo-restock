@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "functions": {
+    "api/check.js": {
+      "maxDuration": 240
+    },
+    "api/status.js": {
+      "maxDuration": 15
+    }
+  }
+}
