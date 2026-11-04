@@ -1,0 +1,33 @@
+name: Pause or resume iPhone Duo alerts
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Monitoring control
+        required: true
+        type: choice
+        options:
+          - pause
+          - resume
+permissions:
+  contents: read
+jobs:
+  control:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Change monitoring status
+        env:
+          VERCEL_URL: ${{ secrets.VERCEL_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          ACTION: ${{ inputs.action }}
+        run: |
+          set -euo pipefail
+          [ -n "${VERCEL_URL:-}" ] && [ -n "${CRON_SECRET:-}" ] || { echo 'Missing Actions secrets'; exit 1; }
+          case "${ACTION}" in pause|resume) ;; *) echo 'Invalid action'; exit 1;; esac
+          payload="$(printf '{"action":"%s"}' "${ACTION}")"
+          curl --silent --show-error --fail-with-body --max-time 45 \
+            --request POST "${VERCEL_URL%/}/api/control" \
+            --header "Authorization: Bearer ${CRON_SECRET}" \
+            --header 'Content-Type: application/json' \
+            --data "${payload}"

@@ -109,7 +109,7 @@ $('allStores').textContent=d.summary?.observedStores??'0';
 $('freshStores').textContent=d.summary?.freshStores??'0';
 $('availableStores').textContent=d.summary?.availableStores??'0';
 $('priorityStores').textContent=d.summary?.priorityStores??'0';
-$('lastChecked').textContent=d.lastRun?'Most recent scanner run '+dt(d.lastRun):'No scanner run recorded';
+$('lastChecked').textContent=d.monitorPaused?'MONITORING PAUSED — no new checks or alerts':d.lastRun?'Most recent scanner run '+dt(d.lastRun):'No scanner run recorded';
 $('nextUpdate').textContent='Page refreshed '+dt(lastFetched);
 $('warnings').textContent=d.lastBatch?.errors?'• '+d.lastBatch.errors+' scan errors in latest batch':'';
 const states=[...new Set(d.stores.map(s=>s.state).filter(Boolean))].filter(v=>!['NY','NJ'].includes(v)).sort();

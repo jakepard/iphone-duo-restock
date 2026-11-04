@@ -29,7 +29,7 @@ test('mail has store, SKU, city, distance and buy link',()=>{
 });
 test('initial availability confirms and sends once, outside radius ignored',async()=>{
  let stored=null,lock=null,emails=[],calls=[];
- const redis={async get(key){return key.includes(':lock:')?lock:stored;},async set(key,value,options){if(key.includes(':lock:')){if(lock&&options?.nx)return null;lock=value;return 'OK';}stored=value;return 'OK';},async del(){lock=null;}};
+ const redis={async get(key){return key.includes(':lock:')?lock:key.includes(':paused:')?null:stored;},async set(key,value,options){if(key.includes(':lock:')){if(lock&&options?.nx)return null;lock=value;return 'OK';}stored=value;return 'OK';},async del(){lock=null;}};
  const fetchStores=async(zip)=>{calls.push(zip);return [record('11230'),{...record('94110'),storeNumber:'R999'}];};
  const deps={redis,sendEmail:async m=>emails.push(m),fetchStores,coreSeeds:['11230'],edgeSeeds:[],pause:async()=>{},now:()=>Date.now()};
  const first=await runMonitor(deps),second=await runMonitor(deps);

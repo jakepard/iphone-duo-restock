@@ -40,3 +40,11 @@ GitHub repository Actions secrets:
 
 This bot is a best-effort monitor, not a real-time stock guarantee. The Apple pickup interface is undocumented and subject to change. ZIP centroid distances are approximate and can differ from actual physical store distance. Store pickup is never reserved. GitHub Actions schedule isn't guaranteed to fire on time, and the free Vercel Hobby plan is personal/non-commercial; verify rights to the data and move to a commercial-capable hosting plan and authorized inventory source before offering subscriptions.
 
+
+## Stop and restart monitoring
+
+Go to [Pause or resume iPhone Duo alerts](https://github.com/jakepard/iphone-duo-restock/actions/workflows/control.yml), choose **Run workflow** and select **pause** or **resume**. This switches monitoring state in Redis without copying secrets or editing code. It is safer than changing the GitHub Actions workflow schedule. A scan that is already in progress might finish a request before pausing. The regular polling workflow remains scheduled but exits without inventory checks while paused.
+
+## Faster purchasing (manual confirmation)
+
+Alert emails prioritize the official Apple purchase URL, the exact color/storage, store location, approximate distance, and a Google Maps location link. Save an Apple account, pickup details and payment method ahead of time; complete checkout personally. The link is a product page, not a guaranteed preloaded cart or store-specific reservation. Automatic purchasing and payment account access are not enabled.
