@@ -85,7 +85,7 @@ Alert emails continue through the existing Gmail connection, only when a new res
 
 ## Reliability behavior (v1.2)
 
-- **Endpoint:** uses `/shop/fulfillment-messages` (what Apple's own buy page uses now). If that returns an unexpected shape, the same call falls back to the legacy `/shop/retail/pickup-message`. A 403/429/541 rejection is never retried.
+- **Endpoint:** uses `/shop/retail/pickup-message`. If that returns an unexpected shape, the same call falls back to `/shop/fulfillment-messages` (what Apple's buy page uses). In production, fulfillment-messages was rejected with HTTP 541 every time from Vercel while pickup-message worked, so it is only a fallback. A 403/429/541 rejection is never retried.
 - **Backoff:** after a rejection, checks pause 5 → 10 → 20 → 40 → 60 minutes, and reset to normal after the next successful check.
 - **Outage warning:** if no good inventory data arrives for 45 minutes, one warning alert is sent, then one "back" alert when data returns.
 - **Failed checks never change stock state.** Old observations become "stale", never "unavailable".
