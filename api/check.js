@@ -19,6 +19,6 @@ const mode=req.query.mode==='hotspot'?'hotspot':'full';
 const scanOptions=mode==='hotspot'?{coreSeeds:['11230'],edgeSeeds:[],edgeBatch:0}:{};
 const result=await runMonitor({redis:Redis.fromEnv(),sendEmail,...scanOptions});
 result.scanMode=mode;
-return res.status(result.status==='busy'?202:200).json(result);
+return res.status(result.status==='failed'?503:result.status==='busy'?202:200).json(result);
 }catch(err){console.error('check failed',err?.message||err);return res.status(500).json({status:'error',error:'Check Vercel function logs'});}
 };

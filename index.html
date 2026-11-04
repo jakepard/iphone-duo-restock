@@ -140,7 +140,8 @@ $('lastChecked').textContent=d.monitorPaused?'MONITORING PAUSED — no new check
 $('nextUpdate').textContent='Page refreshed '+dt(lastFetched);
 const lastRunMs=d.lastRun?Date.parse(d.lastRun):NaN;
 const isOld=Number.isFinite(lastRunMs)&&Date.now()-lastRunMs>15*60000;
-$('warnings').textContent=(d.monitorPaused?'• Monitoring paused ':isOld?'• Last scan older than 15 minutes; scheduled checks need attention ':'')+(d.lastBatch?.errors?'• '+d.lastBatch.errors+' errors in latest batch':'');
+const failedAll=d.lastBatch?.checks>0&&d.lastBatch?.errors>=d.lastBatch?.checks&&d.lastBatch?.successfulChecks===0;
+$('warnings').textContent=(d.monitorPaused?'• Monitoring paused ':isOld?'• Last scan older than 15 minutes; scheduled checks need attention ':'')+(d.lastBatch?.errors?'• '+d.lastBatch.errors+' errors in latest batch':'')+(failedAll?' — NO SUCCESSFUL INVENTORY CHECKS':'')+(d.lastProviderIssue?' • '+d.lastProviderIssue:'');
 const states=[...new Set(d.stores.map(s=>s.state).filter(Boolean))].filter(v=>!['NY','NJ'].includes(v)).sort();
 const current=$('region').value;
 $('region').replaceChildren();

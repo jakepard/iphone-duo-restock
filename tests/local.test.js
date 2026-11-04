@@ -36,3 +36,20 @@ test('initial availability confirms and sends once, outside radius ignored',asyn
  assert.equal(first.confirmed,1);assert.equal(first.alerts,1);assert.equal(second.alerts,0);
  assert.equal(emails.length,1);assert.equal(first.nearbyStores,1);assert.deepEqual(calls,['11230','11230','11230']);
 });
+
+test('failed provider queries are reported as failures, not as an OK scan',async()=>{
+ let stored=null,lock=null;
+ const redis={
+  async get(key){return key.includes(':lock:')?lock:key.includes(':paused:')?null:stored;},
+  async set(key,value,options){if(key.includes(':lock:')){if(lock&&options?.nx)return null;lock=value;return 'OK';}stored=value;return 'OK';},
+  async del(){lock=null;}
+ };
+ const sendEmail=async()=>{throw Error('Should not email on failed checks')};
+ const outcome=await runMonitor({redis,sendEmail,fetchStores:async()=>{throw Error('Apple pickup HTTP 500')},coreSeeds:['11230','10001'],edgeSeeds:[],pause:async()=>{}});
+ assert.equal(outcome.status,'failed');
+ assert.equal(outcome.checks,2);
+ assert.equal(outcome.successfulChecks,0);
+ assert.equal(outcome.errors,2);
+ assert.equal(stored.lastSuccess,null);
+ assert.match(outcome.lastError,/Apple pickup HTTP 500/);
+});

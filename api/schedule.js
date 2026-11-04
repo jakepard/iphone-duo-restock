@@ -18,7 +18,7 @@ module.exports=async(req,res)=>{
   // This separate credential can ONLY run stock checks: no test-email, pause/resume, or arbitrary mail.
   const scanOptions=mode==='hotspot'?{coreSeeds:['11230'],edgeSeeds:[],edgeBatch:0}:{};
   const result=await runMonitor({redis:Redis.fromEnv(),sendEmail,...scanOptions});
-  return res.status(result.status==='busy'?202:200).json({scanMode:mode,...result});
+  return res.status(result.status==='failed'?503:result.status==='busy'?202:200).json({scanMode:mode,...result});
  }catch(error){
   console.error('External scheduler check failed',error?.message||error);
   return res.status(502).json({status:'error',error:'Scanner failed; inspect Vercel runtime logs'});
