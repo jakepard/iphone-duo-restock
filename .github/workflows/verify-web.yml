@@ -1,0 +1,21 @@
+name: Verify public stock dashboard API
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-web.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check live stock feed response
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 \
+            --output stock.json 'https://iphone-duo-restock.vercel.app/api/stock'
+          jq -e '.stores | type == "array"' stock.json >/dev/null
+          jq '{status, lastRun, stores: (.stores|length), summary, monitorPaused}' stock.json
