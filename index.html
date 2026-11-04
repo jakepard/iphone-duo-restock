@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0b1222"><title>iPhone Duo | Stock Radar</title>
+<meta name="theme-color" content="#0b1222"><title>iPhone Duo | 11230 Restock Radar</title>
 <style>
 :root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#f6f8fc;font-synthesis:none}
 *{box-sizing:border-box}body{margin:0}button,select,input{font:inherit}
@@ -25,22 +25,22 @@ button{cursor:pointer}.tool{border:1px solid #dce3ef;background:white;border-rad
 footer{color:#64748b;font-size:12px;line-height:1.7;margin:25px 2px}a{color:#2255e0}footer a{color:#2255e0}.disclaimer{margin-top:14px;font-size:12px;color:#58677e;background:#fff7e7;padding:12px 15px;border:1px solid #f6e8c8;border-radius:10px;line-height:1.6}
 @media(max-width:900px){.filters{grid-template-columns:repeat(2,1fr)}.variants{grid-template-columns:repeat(2,minmax(0,1fr))}.stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:580px){.top{padding:17px 15px 24px}.wrap{padding:15px 12px}.hero{display:block}.hero a{display:inline-block;margin-top:17px}.stats{gap:9px}.stat{padding:14px}.stat strong{font-size:24px}.filters{grid-template-columns:1fr}.storehead{grid-template-columns:1fr auto;gap:8px}.storehead .actions{grid-column:1 / -1}.variants{grid-template-columns:1fr 1fr;padding:0 12px 15px}.panelhead,.storehead,.summary{padding-left:13px;padding-right:13px}.storetime{text-align:left}.chip{margin-left:0;margin-top:4px}.badge{display:none}}
 </style></head><body>
-<header><div class="top"><div class="logo"><div class="mark">◉</div> iPhone Duo <span style="font-size:14px;font-weight:450;color:#89a1c4">/ Stock Radar</span><span class="badge">US APPLE STORE PICKUP</span></div>
-<div class="hero"><div><h1>Find your next iPhone.</h1><p>US inventory observations · New York &amp; New Jersey prioritized · All 8 configurations</p></div><a href="https://www.apple.com/shop/buy-iphone/iphone-duo" target="_blank" rel="noopener noreferrer">Shop at Apple ↗</a></div></div></header>
+<header><div class="top"><div class="logo"><div class="mark">◉</div> iPhone Duo <span style="font-size:14px;font-weight:450;color:#89a1c4">/ 11230 Radar</span><span class="badge">11230 · 50 MILES</span></div>
+<div class="hero"><div><h1>Find an iPhone near Brooklyn.</h1><p>Automated pickup checks near ZIP 11230 · 50-mile radius · NY, NJ &amp; nearby areas</p></div><a href="https://www.apple.com/shop/buy-iphone/iphone-duo" target="_blank" rel="noopener noreferrer">Shop at Apple ↗</a></div></div></header>
 <main class="wrap"><section class="stats">
-<div class="stat"><small>Stores discovered</small><strong id="allStores">—</strong><span>Across the US</span></div>
-<div class="stat"><small>Recently checked stores</small><strong id="freshStores">—</strong><span>Within 30 minutes</span></div>
+<div class="stat"><small>Nearby stores discovered</small><strong id="allStores">—</strong><span>Within 50 miles of 11230</span></div>
+<div class="stat"><small>Recently checked nearby stores</small><strong id="freshStores">—</strong><span>Within 15 minutes</span></div>
 <div class="stat"><small>Reported available</small><strong id="availableStores">—</strong><span>Stores with recent available signals</span></div>
-<div class="stat"><small>NY / NJ stores observed</small><strong id="priorityStores">—</strong><span>Priority regions</span></div>
+<div class="stat"><small>Stores in your alert radius</small><strong id="priorityStores">—</strong><span>Within 50 miles</span></div>
 </section>
 <div class="disclaimer"><strong>Availability is informational, not guaranteed.</strong> Store results come from periodic pickup checks, not direct stock reservations. “Reported available” is a recent observation, not a promise of inventory. Verify with Apple before traveling or purchasing.</div>
-<section class="panel"><div class="panelhead"><div><h2>Store inventory</h2><p id="lastChecked">Loading latest inventory observations…</p></div><button class="tool" type="button" id="refresh">↻ Refresh data</button></div>
+<section class="panel"><div class="panelhead"><div><h2>Inventory within 50 miles of 11230</h2><p id="lastChecked">Loading latest inventory observations…</p></div><button class="tool" type="button" id="refresh">↻ Refresh data</button></div>
 <div class="filters"><input id="search" type="search" placeholder="Search store, city, state, ZIP…" aria-label="Search stores">
-<select id="region" aria-label="Filter region"><option value="ALL">All US regions</option><option value="PRIORITY">NY + NJ priority</option><option value="NY">New York only</option><option value="NJ">New Jersey only</option></select>
+<select id="region" aria-label="Filter region"><option value="ALL">All nearby areas</option><option value="PRIORITY">NY + NJ</option><option value="NY">New York only</option><option value="NJ">New Jersey only</option></select>
 <select id="storage" aria-label="Filter storage"><option value="ALL">All storage sizes</option><option value="256GB">256GB</option><option value="512GB">512GB</option><option value="1TB">1TB</option><option value="2TB">2TB</option></select>
 <select id="availability" aria-label="Filter availability"><option value="ALL">All availability</option><option value="available">Reported available</option><option value="unavailable">Reported unavailable</option><option value="stale">Stale observations</option><option value="not-checked">Not yet checked</option></select></div>
 <div class="summary"><span id="shown">Loading…</span><span id="nextUpdate"></span><span id="warnings"></span></div><div id="results" aria-live="polite"><div class="empty">Fetching observed inventory…</div></div></section>
-<footer><strong>About the data.</strong> Results refresh every 60 seconds in this browser. A 30-minute freshness window is applied; older results display as stale rather than “in stock.” Search batches rotate across US locations; stores not checked recently will remain marked stale. <a href="https://github.com/jakepard/iphone-duo-restock" target="_blank" rel="noopener noreferrer">View source and monitoring</a>.<p>Independent project. Not affiliated with Apple. No inventory is reserved or purchased through this site.</p></footer></main>
+<footer><strong>About the data.</strong> Results refresh every 60 seconds in this browser. A 15-minute freshness window is applied; older results display as stale rather than “in stock.” Checks cover several local ZIPs each run, rotating additional nearby ZIPs; stores not checked recently will remain marked stale. <a href="https://github.com/jakepard/iphone-duo-restock" target="_blank" rel="noopener noreferrer">View source and monitoring</a>.<p>Independent project. Not affiliated with Apple. No inventory is reserved or purchased through this site.</p></footer></main>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
@@ -81,7 +81,7 @@ return el;
 function renderStore(s){
 const el=node('article','store');const head=node('div','storehead');const primary=node('div');
 const nm=node('div','storename',s.name||s.id);if(priority(s))nm.append(node('span','chip','NY/NJ PRIORITY'));
-primary.append(nm,node('div','storeloc',[s.city,s.state,s.postalCode].filter(Boolean).join(', ')||s.id));
+primary.append(nm,node('div','storeloc',([s.city,s.state,s.postalCode].filter(Boolean).join(', ')||s.id)+(typeof s.distanceMiles==='number'?' · ~'+s.distanceMiles.toFixed(1)+' miles from 11230':'')));
 const match=selectedVariants(s);
 const count=match.filter(v=>v.status==='available').length,checked=match.filter(v=>v.status==='available'||v.status==='unavailable').length;
 const right=node('div');right.append(node('div','pill '+(count?'available':checked?'unavailable':'stale'),count?count+' reported available':checked?checked+' recently checked':'No fresh inventory'),node('div','storetime',s.lastChecked?'Last observed '+age(s.lastChecked):'Not checked'));
@@ -115,7 +115,7 @@ $('warnings').textContent=d.lastBatch?.errors?'• '+d.lastBatch.errors+' scan e
 const states=[...new Set(d.stores.map(s=>s.state).filter(Boolean))].filter(v=>!['NY','NJ'].includes(v)).sort();
 const current=$('region').value;
 $('region').replaceChildren();
-for(const [value,label] of [['ALL','All US regions'],['PRIORITY','NY + NJ priority'],['NY','New York only'],['NJ','New Jersey only'],...states.map(s=>[s,s])]){const opt=node('option','',label);opt.value=value;$('region').append(opt);}
+for(const [value,label] of [['ALL','All nearby areas'],['PRIORITY','NY + NJ'],['NY','New York only'],['NJ','New Jersey only'],...states.map(s=>[s,s])]){const opt=node('option','',label);opt.value=value;$('region').append(opt);}
 $('region').value=current||'ALL';
 render();
 }catch(e){$('lastChecked').textContent='Could not refresh inventory: '+e.message;if(!feed){$('results').replaceChildren(node('div','empty','The inventory feed is temporarily unavailable.'));}}

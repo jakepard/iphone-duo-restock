@@ -1,23 +1,42 @@
-# iPhone Duo Restock Radar
+# iPhone Duo 11230 Restock Radar
 
-Personal US Apple Store pickup-monitoring bot with NY/NJ priority, Gmail alerts, and a live dashboard.
+Live dashboard: https://iphone-duo-restock.vercel.app
 
-[Dashboard](https://iphone-duo-restock.vercel.app) · [GitHub Actions](https://github.com/jakepard/iphone-duo-restock/actions/workflows/poll.yml)
+## Monitoring configuration
 
-## Deployment and credentials
+- **Center:** Brooklyn, NY 11230
+- **Radius:** 50 miles, using approximate ZIP-code center-to-center distances (not driving miles or exact store coordinates)
+- **Areas:** NYC, Long Island, nearby New Jersey and Connecticut stores whose ZIP-code centroid is within 50 miles
+- **Variants:** all eight iPhone Duo color/storage combinations
+- **Schedule:** GitHub Actions is configured every five minutes (GitHub may delay or skip a run). Every run checks five core locations plus four rotating perimeter locations. Some nearby stores may be discovered less frequently or missed.
+- **Alerts:** When Apple pickup availability changes to available, the bot requests the same location a second time, then emails the configured Gmail address with store, address when supplied by Apple, ZIP, estimated straight-line distance, configurations, and Apple purchase link. No checkout automation.
+- **State:** Upstash Redis stores results and suppresses repeated alerts until two explicit unavailable observations.
+- **Dashboard:** /api/stock shows recent observations for verified local stores; stale after 15 minutes. The page refreshes approximately every minute. If a store's location cannot be verified, it is excluded rather than falsely claiming it's within radius.
 
-This repository is linked to a Vercel project. Set the following environment variables on Vercel, production scope: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD`, `CRON_SECRET`. In GitHub Actions repository secrets, set `VERCEL_URL` to your production domain and `CRON_SECRET` to the same value used in Vercel. Never commit credentials.
+## Private production setup
 
-The GitHub Actions workflow calls the protected inventory API on a 5-minute schedule (execution may be delayed). Each scanner batch rotates through US search seeds, with priority given to NY and NJ. The endpoint uses `Authorization: Bearer <CRON_SECRET>`. Test email dispatch using the GitHub Actions workflow with `test_email` enabled, or run an inventory scan without it. The inventory feed is read-only.
+Vercel environment variables (Production):
+`CRON_SECRET`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD`. Optional: `EMAIL_TO`, `MAX_EMAILS_PER_DAY`.
 
-## Tests
+GitHub repository Actions secrets:
+`VERCEL_URL` (e.g. `https://iphone-duo-restock.vercel.app`), `CRON_SECRET` (same exact secret as Vercel).
 
-Run `npm install && npm test` locally. Tests do not guarantee Apple availability access or real-time checkout availability.
+**Never commit any secret to GitHub.** Redeploy Vercel after editing production variables.
 
-## Live inventory dashboard
+## Operations
 
-The public dashboard at the production domain now shows observed US stores, individual model/color/storage combinations, last-check timestamps, regional filters, and links to Apple's shop. `GET /api/stock` returns the same sanitized public data; no credentials or subscriber addresses are included.
+1. Visit the [inventory-check workflow](https://github.com/jakepard/iphone-duo-restock/actions/workflows/poll.yml).
+2. Select **Run workflow** with `test_email` unchecked for an immediate actual scan.
+3. Inspect the run's **Call protected Vercel scanner** output for `checks`, `errors`, `nearbyStores`, and `alerts`. The workflow is successful only if the endpoint returned an HTTP 2xx response; a result with `status:partial` can still have some inventory errors.
+4. Check the dashboard for local stores and last scanner run. To verify ongoing monitoring, look for runs with the `schedule` event in Actions.
+5. Select `test_email` checked to verify Gmail delivery without waiting for a real restock.
+6. Check Vercel runtime logs if scan responses show errors; Apple may throttle or change its undocumented inventory API.
 
-**Freshness:** Availability information older than 30 minutes is always marked stale. Existing observations from older bot versions have no SKU observation timestamps, so they initially show as `Not checked` until the new scanner runs. A newer unavailable observation never becomes “available.” Apple pickup values are only observed signals: they do not promise that a product can still be ordered when a customer clicks.
+## Running tests
 
-**Potential commercial service:** Vercel Hobby is not for commercial operation, and independently gathering or reselling Apple's website inventory may require permission or a licensed stock-data feed. Verify authorized use and choose paid commercial-capable infrastructure before selling subscriptions. This project does not include customer accounts, billing, or production subscription security.
+`npm install && npm test`
+
+## Important limitations
+
+This bot is a best-effort monitor, not a real-time stock guarantee. The Apple pickup interface is undocumented and subject to change. ZIP centroid distances are approximate and can differ from actual physical store distance. Store pickup is never reserved. GitHub Actions schedule isn't guaranteed to fire on time, and the free Vercel Hobby plan is personal/non-commercial; verify rights to the data and move to a commercial-capable hosting plan and authorized inventory source before offering subscriptions.
+
