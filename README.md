@@ -16,7 +16,7 @@ Live dashboard: https://iphone-duo-restock.vercel.app
 ## Private production setup
 
 Vercel environment variables (Production):
-`CRON_SECRET`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD`. Optional: `EMAIL_TO`, `MAX_EMAILS_PER_DAY`.
+`CRON_SECRET`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD`. Optional: `EMAIL_TO`, `MAX_EMAILS_PER_DAY`, `NTFY_TOPIC`, `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` (free phone push; see below).
 
 GitHub repository Actions secrets:
 `VERCEL_URL` (e.g. `https://iphone-duo-restock.vercel.app`), `CRON_SECRET` (same exact secret as Vercel).
@@ -73,12 +73,29 @@ Set up:
    - URL: `https://iphone-duo-restock.vercel.app/api/schedule?mode=hotspot`
    - Request method: **POST**
    - Custom HTTP header: `Authorization` = `Bearer <YOUR-EXTERNAL_SCHEDULER_SECRET>` (replace bracketed text with the real secret)
-   - Schedule: **every minute**, all hours/days, job enabled.
+   - Schedule: **every 2 minutes**, all hours/days, job enabled.
 4. Create the **full local area** job:
    - URL: `https://iphone-duo-restock.vercel.app/api/schedule?mode=full`
    - Method: **POST**; same authorization header.
-   - Schedule: **every five minutes**, all hours/days, job enabled.
-5. Test the jobs using cron-job.org execution history: successful checks return HTTP 200 and JSON with `status: ok`, `scanMode`, and `checks`. If `paused` or `cooldown`, the scanner is intentionally not checking. If `busy`, a check is already running. Cron-job.org free jobs can time out at **30 seconds**; the full scan can occasionally take longer, so verify its history rather than trusting the schedule alone.
+   - Schedule: **every 10 minutes**, all hours/days, job enabled.
+5. Test the jobs using cron-job.org execution history. HTTP 200 means the call was handled: `status: ok` checked Apple; `cooldown`, `paused` or `busy` mean it intentionally skipped (these return 200 so cron-job.org does not auto-disable the job). HTTP 503 means Apple was asked and refused or failed (`provider-blocked`, `rate-limited`, `failed`). The dashboard banner is the real health check. Cron-job.org free jobs can time out at **30 seconds**; the full scan can occasionally take longer, so verify its history rather than trusting the schedule alone.
 6. **After both jobs are confirmed successful**, disable GitHub's separate `Check iPhone Duo stock near 11230` workflow (Actions → workflow → ⋯ → Disable workflow) to avoid duplicate requests. Leave the separate pause/resume and email-test workflows enabled. Enable cron-job.org failure notifications.
 
 Alert emails continue through the existing Gmail connection, only when a new restock is independently confirmed. Do not increase polling beyond what your inventory source permits.
+
+## Reliability behavior (v1.2)
+
+- **Endpoint:** uses `/shop/fulfillment-messages` (what Apple's own buy page uses now). If that returns an unexpected shape, the same call falls back to the legacy `/shop/retail/pickup-message`. A 403/429/541 rejection is never retried.
+- **Backoff:** after a rejection, checks pause 5 → 10 → 20 → 40 → 60 minutes, and reset to normal after the next successful check.
+- **Outage warning:** if no good inventory data arrives for 45 minutes, one warning alert is sent, then one "back" alert when data returns.
+- **Failed checks never change stock state.** Old observations become "stale", never "unavailable".
+- Part numbers and names were verified on 2026-11-04 against Apple's own buy page product data.
+
+## Free phone push (optional)
+
+Alerts go to email plus any push channel you configure. An alert counts as delivered if any channel works.
+
+- **ntfy (easiest):** install the free ntfy iPhone app, subscribe to a long random topic name, and set `NTFY_TOPIC` to that name in Vercel (Production). Anyone who knows the topic name can read it, so make it unguessable.
+- **Telegram:** create a bot with @BotFather, message it once, then set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`.
+
+Run the "Gmail test" workflow afterwards: it now tests every configured channel.

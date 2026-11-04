@@ -54,7 +54,7 @@ test('failed provider queries are reported as failures, not as an OK scan',async
  assert.match(outcome.lastError,/Apple pickup HTTP 500/);
 });
 
-test('HTTP 541 provider rejection stops batch and applies a 30-minute cooldown',async()=>{
+test('HTTP 541 provider rejection stops batch and applies a 5-minute first cooldown',async()=>{
  let stored=null,lock=null,fetches=0;
  const tick=Date.UTC(2026,10,4,17,0,0);
  const redis={
@@ -69,7 +69,7 @@ test('HTTP 541 provider rejection stops batch and applies a 30-minute cooldown',
  assert.equal(first.successfulChecks,0);
  assert.equal(first.errors,1);
  assert.equal(fetches,1);
- assert.equal(stored.blockedUntil,tick+30*60*1000);
+ assert.equal(stored.blockedUntil,tick+5*60*1000);
  const second=await runMonitor(options);
  assert.equal(second.status,'cooldown');
  assert.equal(fetches,1);

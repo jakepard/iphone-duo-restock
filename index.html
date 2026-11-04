@@ -18,7 +18,9 @@ button{cursor:pointer}.tool{border:1px solid #dce3ef;background:white;border-rad
 .dot{width:7px;height:7px;border-radius:50%;display:inline-block;background:#15a371;margin-right:5px}
 .store{border-bottom:1px solid #edf0f5}.store:last-child{border-bottom:none}.storehead{display:grid;grid-template-columns:1fr auto auto;gap:16px;align-items:center;padding:16px 19px}
 .storename{font-weight:750;color:#16243e;font-size:14px}.storeloc{color:#667893;font-size:12px;margin-top:5px}.chip{display:inline-flex;align-items:center;background:#edf2ff;border-radius:20px;padding:5px 8px;font-weight:700;color:#3154b2;font-size:10px;margin-left:6px}
-.pill{display:inline-block;border-radius:20px;padding:5px 10px;font-size:11px;font-weight:700;white-space:nowrap}.pill.available{color:#05714d;background:#daf9ea}.pill.unavailable{color:#a34545;background:#ffeded}.pill.unknown{color:#65748c;background:#eff2f6}.pill.stale{color:#966a16;background:#fff3d9}
+.pill{display:inline-block;border-radius:20px;padding:5px 10px;font-size:11px;font-weight:700;white-space:nowrap}.pill.available{color:#05714d;background:#daf9ea}.pill.unavailable{color:#a34545;background:#ffeded}.pill.unknown{color:#65748c;background:#eff2f6}.pill.stale{color:#966a16;background:#fff3d9}.pill.not-checked{color:#65748c;background:#eff2f6}
+.health{display:flex;gap:12px;align-items:center;border-radius:15px;padding:14px 18px;margin-bottom:13px;border:1px solid}.health strong{font-size:15px}.health span{font-size:13px}.health .dot{width:12px;height:12px;border-radius:50%;flex:none}
+.health.ok{background:#ecfbf3;border-color:#bfeccf;color:#05582f}.health.ok .dot{background:#14a44d}.health.errors,.health.stale,.health.never{background:#fff7e6;border-color:#f6dca4;color:#7a5410}.health.errors .dot,.health.stale .dot,.health.never .dot{background:#e0a21b}.health.cooldown,.health.paused{background:#fff0f0;border-color:#f5c2c2;color:#8a2626}.health.cooldown .dot,.health.paused .dot{background:#d64545}
 .storetime{font-size:11px;color:#8190a2;margin-top:7px;text-align:right}.variants{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;padding:0 19px 18px}.variant{border:1px solid #e7eaf1;border-radius:10px;padding:12px;background:#fff}.variant .spec{font-size:12px;font-weight:750;margin-bottom:9px}.variant .meta{font-size:10px;color:#718096;margin-top:8px}
 .actions{display:flex;gap:8px;align-items:center}.link{display:inline-block;text-decoration:none;color:#fff;background:#2049dc;font-size:11px;font-weight:750;border-radius:8px;padding:9px 12px;white-space:nowrap}.expand{background:#f5f7fb;border:1px solid #e6eaf1;color:#3f526c;border-radius:8px;padding:9px 11px;font-size:11px;font-weight:700}
 .details{display:none}.store.open .details{display:block}.empty{text-align:center;padding:48px 18px;color:#64748b}.empty strong{color:#24344e;display:block;margin-bottom:6px}
@@ -27,7 +29,7 @@ footer{color:#64748b;font-size:12px;line-height:1.7;margin:25px 2px}a{color:#225
 </style></head><body>
 <header><div class="top"><div class="logo"><div class="mark">◉</div> iPhone Duo <span style="font-size:14px;font-weight:450;color:#89a1c4">/ 11230 Radar</span><span class="badge">11230 · 50 MILES</span></div>
 <div class="hero"><div><h1>Find an iPhone near Brooklyn.</h1><p>Automated pickup checks near ZIP 11230 · 50-mile radius · NY, NJ &amp; nearby areas</p></div><a href="https://www.apple.com/shop/buy-iphone/iphone-duo" target="_blank" rel="noopener noreferrer">Shop at Apple ↗</a></div></div></header>
-<main class="wrap"><section class="stats">
+<main class="wrap"><div id="health" class="health never" role="status"><div class="dot"></div><div><strong id="healthLabel">Loading monitor status…</strong><br><span id="healthDetail"></span></div></div><section class="stats">
 <div class="stat"><small>Nearby stores discovered</small><strong id="allStores">—</strong><span>Within 50 miles of 11230</span></div>
 <div class="stat"><small>Recently checked nearby stores</small><strong id="freshStores">—</strong><span>Within 15 minutes</span></div>
 <div class="stat"><small>Reported available</small><strong id="availableStores">—</strong><span>Stores with recent available signals</span></div>
@@ -67,10 +69,10 @@ function statusLabel(status,variant){
 if(status==='available')return variant?.confirmedAt?'Confirmed available':'Reported available';
 if(status==='unavailable')return 'Reported unavailable';
 if(status==='stale')return 'Stale observation';
-if(status==='not-checked')return 'Not checked';
+if(status==='not-checked')return 'Never checked';
 return 'Unknown';
 }
-function statusClass(status){return ['available','unavailable','stale'].includes(status)?status:'unknown';}
+function statusClass(status){return ['available','unavailable','stale','not-checked'].includes(status)?status:'unknown';}
 function createVariant(v){
 const el=node('div','variant');
 el.append(node('div','spec',v.label));
@@ -138,6 +140,8 @@ $('availableStores').textContent=d.summary?.availableStores??'0';
 $('priorityStores').textContent=d.summary?.priorityStores??'0';
 $('lastChecked').textContent=d.monitorPaused?'MONITORING PAUSED — no new checks or alerts':d.lastRun?'Last scan attempt '+dt(d.lastRun)+' · Last successful check '+(d.lastSuccessfulScan?dt(d.lastSuccessfulScan):'none recorded'):'No scanner run recorded';
 $('nextUpdate').textContent='Page refreshed '+dt(lastFetched);
+const h=d.health||{state:'never',label:'Status unknown',detail:''};
+$('health').className='health '+h.state;$('healthLabel').textContent=h.label;$('healthDetail').textContent=h.detail+(h.state==='cooldown'&&d.cooldownUntil?' Next check '+dt(Date.parse(d.cooldownUntil))+'.':'')+(d.lastProviderIssue&&h.state!=='ok'?' Last problem: '+d.lastProviderIssue+'.':'')+(d.lastAlert?' Last alert sent '+dt(d.lastAlert.at)+' via '+d.lastAlert.sent.join(' + ')+'.':'');
 const lastRunMs=d.lastRun?Date.parse(d.lastRun):NaN;
 const lastSuccessMs=d.lastSuccessfulScan?Date.parse(d.lastSuccessfulScan):NaN;
 const isOld=!Number.isFinite(lastSuccessMs)||Date.now()-lastSuccessMs>15*60000;

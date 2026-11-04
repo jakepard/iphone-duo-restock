@@ -3,6 +3,7 @@ const {timingSafeEqual}=require('node:crypto');
 const {Redis}=require('@upstash/redis');
 const {runMonitor}=require('../lib/runner');
 const {sendEmail}=require('../lib/mail');
+const {withPush}=require('../lib/push');
 function isSchedulerAuthorized(header,secret){
  if(!secret||secret.length<24||typeof header!=='string')return false;
  const actual=Buffer.from(header),expected=Buffer.from('Bearer '+secret);
@@ -17,9 +18,10 @@ module.exports=async(req,res)=>{
   const mode=req.query?.mode==='hotspot'?'hotspot':'full';
   // This separate credential can ONLY run stock checks: no test-email, pause/resume, or arbitrary mail.
   const scanOptions=mode==='hotspot'?{coreSeeds:['11230'],edgeSeeds:[],edgeBatch:0}:{};
-  const result=await runMonitor({redis:Redis.fromEnv(),sendEmail,...scanOptions});
+  // Cooldown/busy/paused return 200 so cron-job.org does not count skipped runs as failures and auto-disable the job.
+  const result=await runMonitor({redis:Redis.fromEnv(),sendEmail:withPush(sendEmail),...scanOptions});
   if(result.retryAfter)res.setHeader('Retry-After',String(Math.max(1,Math.ceil((Date.parse(result.retryAfter)-Date.now())/1000))));
-  return res.status(['failed','rate-limited','provider-blocked','cooldown'].includes(result.status)?503:result.status==='busy'?202:200).json({scanMode:mode,...result});
+  return res.status(['failed','rate-limited','provider-blocked'].includes(result.status)?503:200).json({scanMode:mode,...result});
  }catch(error){
   console.error('External scheduler check failed',error?.message||error);
   return res.status(502).json({status:'error',error:'Scanner failed; inspect Vercel runtime logs'});
